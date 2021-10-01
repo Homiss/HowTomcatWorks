@@ -778,22 +778,14 @@ public final class HttpConnector
 
         synchronized (processors) {
             if (processors.size() > 0) {
-                // if (debug >= 2)
-                // log("createProcessor: Reusing existing processor");
                 return ((HttpProcessor) processors.pop());
             }
             if ((maxProcessors > 0) && (curProcessors < maxProcessors)) {
-                // if (debug >= 2)
-                // log("createProcessor: Creating new processor");
                 return (newProcessor());
             } else {
                 if (maxProcessors < 0) {
-                    // if (debug >= 2)
-                    // log("createProcessor: Creating new processor");
                     return (newProcessor());
                 } else {
-                    // if (debug >= 2)
-                    // log("createProcessor: Cannot create new processor");
                     return (null);
                 }
             }
@@ -934,36 +926,26 @@ public final class HttpConnector
             // Accept the next incoming connection from the server socket
             Socket socket = null;
             try {
-                //                if (debug >= 3)
-                //                    log("run: Waiting on serverSocket.accept()");
                 socket = serverSocket.accept();
-                //                if (debug >= 3)
-                //                    log("run: Returned from serverSocket.accept()");
                 if (connectionTimeout > 0)
                     socket.setSoTimeout(connectionTimeout);
+                // 默认情况下，发送数数据采用Negale算法。Negale算法是指发送方发送 数据不会立刻发出，而是先放在缓冲区内，等缓冲区满了再发出。发送完一批数据后，会等待接收方对这批数据的回应，然后在发送下一批数据。Negale算法适用于发送方需要发送大批量数据，并且接受方会及时作出反应的场合，这种算法通过减少数据的通信的次数来提高通信效率。
+                // TCP_NODELY的默认值为false，表示采用Negale算法。如果调用setTcpNoDelay(true)方法，就会关闭Socket的缓冲，确保数据及时发送
                 socket.setTcpNoDelay(tcpNoDelay);
             } catch (AccessControlException ace) {
                 log("socket accept security exception", ace);
                 continue;
             } catch (IOException e) {
-                //                if (debug >= 3)
-                //                    log("run: Accept returned IOException", e);
                 try {
                     // If reopening fails, exit
                     synchronized (threadSync) {
                         if (started && !stopped)
                             log("accept error: ", e);
                         if (!stopped) {
-                            //                    if (debug >= 3)
-                            //                        log("run: Closing server socket");
                             serverSocket.close();
-                            //                        if (debug >= 3)
-                            //                            log("run: Reopening server socket");
                             serverSocket = open();
                         }
                     }
-                    //                    if (debug >= 3)
-                    //                        log("run: IOException processing completed");
                 } catch (IOException ioe) {
                     log("socket reopen, io problem: ", ioe);
                     break;
@@ -987,7 +969,10 @@ public final class HttpConnector
                 continue;
             }
 
-            // Hand this socket off to an appropriate processor
+            // 得到处理socket的类
+            // createProcessor方法逻辑：
+            //   - 首先会从processors栈中获取处理器，有则返回
+            //   - 如果没有，根据maxProcessors的值决定是否创建新的处理器，或则返回null值
             HttpProcessor processor = createProcessor();
             if (processor == null) {
                 try {
@@ -998,8 +983,6 @@ public final class HttpConnector
                 }
                 continue;
             }
-            //            if (debug >= 3)
-            //                log("run: Assigning socket to processor " + processor);
             processor.assign(socket);
 
             // The processor will recycle itself when it finishes

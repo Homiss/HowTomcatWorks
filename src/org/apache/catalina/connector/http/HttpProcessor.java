@@ -274,7 +274,7 @@ final class HttpProcessor
      */
     synchronized void assign(Socket socket) {
 
-        // Wait for the Processor to get the previous Socket
+        // 如果available为true，则等待（初始化为false）
         while (available) {
             try {
                 wait();
@@ -282,9 +282,10 @@ final class HttpProcessor
             }
         }
 
-        // Store the newly available Socket and notify our thread
+        // 将需要分配的socket赋值给处理器的socket
         this.socket = socket;
         available = true;
+        // 唤醒等待线程
         notifyAll();
 
         if ((debug >= 1) && (socket != null))
@@ -1053,32 +1054,26 @@ final class HttpProcessor
      * hands them off to an appropriate processor.
      */
     public void run() {
-
-        // Process requests until we receive a shutdown signal
+        // 循环执行
         while (!stopped) {
-
-            // Wait for the next socket to be assigned
+            // 等待分配socket
             Socket socket = await();
             if (socket == null)
                 continue;
-
-            // Process the request from this socket
+            // 处理socket
             try {
                 process(socket);
             } catch (Throwable t) {
                 log("process.invoke", t);
             }
-
-            // Finish up this request
+            // 回收处理器（放到processors栈中）
             connector.recycle(this);
-
         }
 
         // Tell threadStop() we have shut ourselves down successfully
         synchronized (threadSync) {
             threadSync.notifyAll();
         }
-
     }
 
 
