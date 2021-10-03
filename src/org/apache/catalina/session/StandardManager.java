@@ -767,6 +767,7 @@ public class StandardManager
 
 
     /**
+     * session过期线程处理
      * Start the background thread that will periodically check for
      * session timeouts.
      */
@@ -811,6 +812,7 @@ public class StandardManager
 
 
     /**
+     * session过期线程处理
      * The background thread that checks for session timeouts and shutdown.
      */
     public void run() {
