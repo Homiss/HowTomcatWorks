@@ -624,7 +624,7 @@ public final class StandardWrapper
             throw new ServletException
                     (sm.getString("standardWrapper.unloading", getName()));
 
-        // If not SingleThreadedModel, return the same instance every time
+        // 如果不是SingleThreadedModel, 每次返回同样的servlet实例
         if (!singleThreadModel) {
 
             // Load and initialize our instance if necessary
